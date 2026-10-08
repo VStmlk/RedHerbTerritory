@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>我的创意效能看板</title>
+  <!-- 1. 引入美化样式的 TailwindCSS（免安装，通过网络加载） -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 p-8 text-slate-800">
+
+  <div class="max-w-5xl mx-auto space-y-6">
+    
+    <!-- 头部区域 -->
+    <header class="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">创意投放效能看板</h1>
+        <p class="text-sm text-slate-500 mt-1">支持本地增删改查与图片预览</p>
+      </div>
+      <button onclick="addCreative()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition shadow">
+        + 模拟添加一条创意
+      </button>
+    </header>
+
+    <!-- 数据表格卡片 -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+        <h2 class="font-bold text-slate-700">创意素材清单</h2>
+        <span id="data-count" class="text-xs text-slate-400">共 0 条</span>
+      </div>
+
+      <table class="w-full text-left text-sm">
+        <thead class="bg-slate-50 text-slate-500 text-xs font-semibold">
+          <tr>
+            <th class="p-4">素材图片</th>
+            <th class="p-4">产品名称</th>
+            <th class="p-4">创意名称</th>
+            <th class="p-4">消耗金额</th>
+            <th class="p-4">成交金额</th>
+            <th class="p-4">ROI</th>
+            <th class="p-4">操作</th>
+          </tr>
+        </thead>
+        <tbody id="table-body" class="divide-y divide-slate-100">
+          <!-- 这里的数据会由 JavaScript 自动填进来 -->
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- 2. 核心逻辑：数据存储与展示 -->
+  <script>
+    // 预设的出厂初始数据（带图床链接）
+    const defaultData = [
+      {
+        id: 1,
+        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=120',
+        product: '爆款运动护膝 A款',
+        name: '白底3D透气演示主图',
+        spend: 3200,
+        gmv: 12800
+      },
+      {
+        id: 2,
+        image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120',
+        product: '支撑透气护腰 B款',
+        name: '模特跑步实测效果图',
+        spend: 5400,
+        gmv: 18900
+      }
+    ];
+
+    // 读取数据：先看浏览器本地存没存，没有就用 defaultData
+    function loadData() {
+      const local = localStorage.getItem('my_creative_list');
+      if (local) {
+        return JSON.parse(local);
+      } else {
+        localStorage.setItem('my_creative_list', JSON.stringify(defaultData));
+        return defaultData;
+      }
+    }
+
+    // 渲染表格：把数据生成为一行行的 HTML
+    function renderTable() {
+      const data = loadData();
+      const tbody = document.getElementById('table-body');
+      const countLabel = document.getElementById('data-count');
+      
+      countLabel.textContent = `共 ${data.length} 条记录`;
+      tbody.innerHTML = ''; // 先清空表格
+
+      data.forEach(item => {
+        // 计算 ROI = 成交金额 / 消耗金额
+        const roi = (item.gmv / item.spend).toFixed(2);
+        
+        // 动态拼装一行 tr
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition';
+        tr.innerHTML = `
+          <td class="p-4">
+            <img src="${item.image}" alt="素材" class="w-12 h-12 object-cover rounded-lg border border-slate-200">
+          </td>
+          <td class="p-4 font-medium text-slate-800">${item.product}</td>
+          <td class="p-4 text-slate-600">${item.name}</td>
+          <td class="p-4 font-mono text-slate-700">¥${item.spend.toLocaleString()}</td>
+          <td class="p-4 font-mono font-bold text-slate-900">¥${item.gmv.toLocaleString()}</td>
+          <td class="p-4 font-mono font-bold ${roi >= 3 ? 'text-emerald-600' : 'text-amber-600'}">${roi}</td>
+          <td class="p-4">
+            <button onclick="deleteItem(${item.id})" class="text-xs text-rose-500 hover:text-rose-700 font-medium">删除</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 模拟添加一条新数据
+    function addCreative() {
+      const data = loadData();
+      const newId = Date.now(); // 用时间戳当唯一ID
+      data.push({
+        id: newId,
+        image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=120',
+        product: '新品护颈带 C款',
+        name: `新测试素材-${data.length + 1}`,
+        spend: 1000,
+        gmv: 4200
+      });
+      // 写入本地缓存并重新刷新表格
+      localStorage.setItem('my_creative_list', JSON.stringify(data));
+      renderTable();
+    }
+
+    // 删除单条数据
+    function deleteItem(id) {
+      let data = loadData();
+      data = data.filter(item => item.id !== id);
+      localStorage.setItem('my_creative_list', JSON.stringify(data));
+      renderTable();
+    }
+
+    // 网页加载完成后，立即执行一次渲染
+    renderTable();
+  </script>
+</body>
+</html>
